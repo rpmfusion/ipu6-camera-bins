@@ -1,13 +1,13 @@
 %global debug_package %{nil}
 
-%global commit 276859fc6de83918a32727d676985ec40f31af2b
-%global commitdate 20230208
+%global commit af5ba0cb4a763569ac7514635013e9d870040bcf
+%global commitdate 20231027
 %global shortcommit %(c=%{commit}; echo ${c:0:7})
 
 Name:           ipu6-camera-bins
 Summary:        Binary library for Intel IPU6
 Version:        0.0
-Release:        8.%{commitdate}git%{shortcommit}%{?dist}
+Release:        9.%{commitdate}git%{shortcommit}%{?dist}
 License:        Proprietary
 
 Source0: https://github.com/intel/%{name}/archive/%{commit}/%{name}-%{shortcommit}.tar.gz
@@ -48,37 +48,39 @@ This provides the necessary header files for IPU6 development.
 %prep
 
 %setup -q -n %{name}-%{commit}
-for i in ipu6 ipu6ep; do
-  chrpath --delete $i/lib/*.so
+for i in ipu_tgl ipu_adl ipu_mtl; do
+  chrpath --delete lib/$i/*.so
 done
 
 %build
 # Nothing to build
 
 %install
-for i in ipu6 ipu6ep; do
-  mkdir -p %{buildroot}%{_includedir}/$i
+mkdir -p %{buildroot}%{_includedir}
+for i in ipu_tgl ipu_adl ipu_mtl; do
   mkdir -p %{buildroot}%{_libdir}/$i
-  cp -pr $i/include/* %{buildroot}%{_includedir}/$i/
-  cp -pr $i/lib/lib* $i/lib/pkgconfig %{buildroot}%{_libdir}/$i
+  cp -pr include/$i %{buildroot}%{_includedir}
+  cp -pr lib/$i/lib* lib/$i/pkgconfig %{buildroot}%{_libdir}/$i
   patchelf --set-rpath %{_libdir}/$i %{buildroot}%{_libdir}/$i/*.so
   sed -i \
-    -e "s|libdir=/usr/lib|libdir=%{_libdir}|g" \
-    -e "s|libdir}|libdir}/$i|g" \
-    -e "s|includedir}|includedir}/$i|g" \
+    -e "s|libdir=\${prefix}/lib/$i|libdir=%{_libdir}/$i|g" \
     %{buildroot}%{_libdir}/$i/pkgconfig/*.pc
 done
 
 # IPU6 firmwares
-install -p -D -m 0644 ipu6/lib/firmware/intel/ipu6_fw.bin %{buildroot}/usr/lib/firmware/intel/ipu6_fw.bin
-install -p -D -m 0644 ipu6ep/lib/firmware/intel/ipu6ep_fw.bin %{buildroot}/usr/lib/firmware/intel/ipu6ep_fw.bin
+install -p -D -m 0644 lib/firmware/intel/ipu6_fw.bin %{buildroot}/usr/lib/firmware/intel/ipu6_fw.bin
+install -p -D -m 0644 lib/firmware/intel/ipu6ep_fw.bin %{buildroot}/usr/lib/firmware/intel/ipu6ep_fw.bin
+install -p -D -m 0644 lib/firmware/intel/ipu6epadln_fw.bin %{buildroot}/usr/lib/firmware/intel/ipu6epadln_fw.bin
+install -p -D -m 0644 lib/firmware/intel/ipu6epmtl_fw.bin %{buildroot}/usr/lib/firmware/intel/ipu6epmtl_fw.bin
 
 %files
 %license LICENSE
-%dir %{_libdir}/ipu6
-%dir %{_libdir}/ipu6ep
-%{_libdir}/ipu6/*.so*
-%{_libdir}/ipu6ep/*.so*
+%dir %{_libdir}/ipu_tgl
+%dir %{_libdir}/ipu_adl
+%dir %{_libdir}/ipu_mtl
+%{_libdir}/ipu_tgl/*.so*
+%{_libdir}/ipu_adl/*.so*
+%{_libdir}/ipu_mtl/*.so*
 
 %files firmware
 %license LICENSE
@@ -86,21 +88,31 @@ install -p -D -m 0644 ipu6ep/lib/firmware/intel/ipu6ep_fw.bin %{buildroot}/usr/l
 %dir /usr/lib/firmware/intel
 /usr/lib/firmware/intel/ipu6_fw.bin
 /usr/lib/firmware/intel/ipu6ep_fw.bin
+/usr/lib/firmware/intel/ipu6epadln_fw.bin
+/usr/lib/firmware/intel/ipu6epmtl_fw.bin
 
 %files devel
-%dir %{_includedir}/ipu6
-%dir %{_includedir}/ipu6ep
-%dir %{_libdir}/ipu6/pkgconfig
-%dir %{_libdir}/ipu6ep/pkgconfig
-%{_includedir}/ipu6/*
-%{_includedir}/ipu6ep/*
-%{_libdir}/ipu6/pkgconfig/*
-%{_libdir}/ipu6ep/pkgconfig/*
-%{_libdir}/ipu6/*.a
-%{_libdir}/ipu6ep/*.a
+%dir %{_includedir}/ipu_tgl
+%dir %{_includedir}/ipu_adl
+%dir %{_includedir}/ipu_mtl
+%dir %{_libdir}/ipu_tgl/pkgconfig
+%dir %{_libdir}/ipu_adl/pkgconfig
+%dir %{_libdir}/ipu_mtl/pkgconfig
+%{_includedir}/ipu_tgl/*
+%{_includedir}/ipu_adl/*
+%{_includedir}/ipu_mtl/*
+%{_libdir}/ipu_tgl/pkgconfig/*
+%{_libdir}/ipu_adl/pkgconfig/*
+%{_libdir}/ipu_mtl/pkgconfig/*
+%{_libdir}/ipu_tgl/*.a
+%{_libdir}/ipu_adl/*.a
+%{_libdir}/ipu_mtl/*.a
 
 
 %changelog
+* Fri Mar 08 2024 Kate Hsuan <hpa@redhat.com> - 0.0-9.220231027gitaf5ba0c
+- Update to the latest upstream commit
+
 * Tue Aug 08 2023 Kate Hsuan <hpa@redhat.com> - 0.0-8.20230208git276859f
 - Updated to commit 276859fc6de83918a32727d676985ec40f31af2b
 
