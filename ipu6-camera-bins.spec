@@ -7,7 +7,7 @@
 Name:           ipu6-camera-bins
 Summary:        Binary library for Intel IPU6
 Version:        0.0
-Release:        11.%{commitdate}git%{shortcommit}%{?dist}
+Release:        12.%{commitdate}git%{shortcommit}%{?dist}
 License:        Proprietary
 URL:            https://github.com/intel/ipu6-camera-bins
 
@@ -19,7 +19,7 @@ BuildRequires:  patchelf
 
 ExclusiveArch:  x86_64
 
-Requires:       gstreamer1-plugins-icamerasrc
+#Requires:       gstreamer1-plugins-icamerasrc
 Requires:       v4l2-relayd
 Requires:       intel-ipu6-kmod >= 0.0-14
 
@@ -99,6 +99,10 @@ done
 
 
 %changelog
+* Mon Jul  1 2024 Hans de Goede <hdegoede@redhat.com> - 0.0-12.20240507git987b09a
+- Temporarily drop Requires: gstreamer1-plugins-icamerasrc to break
+  broken depenency loop caused by ipu6-camera-hal soname change
+
 * Mon Jun 24 2024 Hans de Goede <hdegoede@redhat.com> - 0.0-11.20240507git987b09a
 - Update to commit 987b09ad7e6124ab8623a986f92ecb47061b8fa0
 - Drop ipu6-camera-bins-firmware and switch to requiring the new
