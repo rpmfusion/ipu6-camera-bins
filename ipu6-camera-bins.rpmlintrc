@@ -1,0 +1,14 @@
+# Most of the per ipu6 version header files are identical
+addFilter("W: files-duplicate")
+addFilter("E: files-duplicated-waste")
+# These are the actual .so files not symlinks
+addFilter("W: devel-file-in-non-devel-package")
+# This has been replaced, so it should not be provided
+addFilter("W: obsolete-not-provided")
+# All of these are because these are Intel proprietary binaries,
+# not build from source FOSS code
+addFilter("W: unstripped-binary-or-object")
+addFilter("E: static-library-without-debuginfo")
+addFilter("W: spurious-executable-perm")
+addFilter("W: no-documentation")
+addFilter("W: invalid-license")

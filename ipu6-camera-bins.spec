@@ -1,14 +1,15 @@
 %global debug_package %{nil}
 
-%global commit af5ba0cb4a763569ac7514635013e9d870040bcf
-%global commitdate 20231027
+%global commit 987b09ad7e6124ab8623a986f92ecb47061b8fa0
+%global commitdate 20240507
 %global shortcommit %(c=%{commit}; echo ${c:0:7})
 
 Name:           ipu6-camera-bins
 Summary:        Binary library for Intel IPU6
 Version:        0.0
-Release:        9.%{commitdate}git%{shortcommit}%{?dist}
+Release:        12.%{commitdate}git%{shortcommit}%{?dist}
 License:        Proprietary
+URL:            https://github.com/intel/ipu6-camera-bins
 
 Source0: https://github.com/intel/%{name}/archive/%{commit}/%{name}-%{shortcommit}.tar.gz
 
@@ -18,11 +19,18 @@ BuildRequires:  patchelf
 
 ExclusiveArch:  x86_64
 
-Requires:       ipu6-camera-bins-firmware
-Requires:       ivsc-firmware
-Requires:       gstreamer1-plugins-icamerasrc
+#Requires:       gstreamer1-plugins-icamerasrc
 Requires:       v4l2-relayd
-Requires:       intel-ipu6-kmod
+Requires:       intel-ipu6-kmod >= 0.0-14
+
+# Require the new Fedora linux-firmware intel-vsc-firmware subpackage and
+# obsolete but do not provide old firmware packages
+Requires:       intel-vsc-firmware >= 20240513
+Obsoletes:      ipu6-camera-bins-firmware < 0.0-11
+# TODO stop requiring and instead obsolete ivsc-firmware once users are no
+# longer using kernels < 6.10 (and also retire the ivsc-firmware pkg)
+Requires:       ivsc-firmware
+# Obsoletes:    ivsc-firmware < 0.0-8
 
 # For kmod package
 Provides:       intel-ipu6-kmod-common = %{version}
@@ -32,14 +40,9 @@ This provides the necessary binaries for Intel IPU6, including library and
 firmware. The library includes necessary image processing algorithms and
 3A algorithm for the camera.
 
-%package firmware
-Summary:        IPU6 firmware
-
-%description firmware
-This provides the necessary firmware for Intel IPU6.
 
 %package devel
-Summary:        IPU6 header files for development.
+Summary:        IPU6 header files for development
 Requires:       %{name}%{?_isa} = %{version}-%{release}
 
 %description devel
@@ -67,11 +70,6 @@ for i in ipu_tgl ipu_adl ipu_mtl; do
     %{buildroot}%{_libdir}/$i/pkgconfig/*.pc
 done
 
-# IPU6 firmwares
-install -p -D -m 0644 lib/firmware/intel/ipu6_fw.bin %{buildroot}/usr/lib/firmware/intel/ipu6_fw.bin
-install -p -D -m 0644 lib/firmware/intel/ipu6ep_fw.bin %{buildroot}/usr/lib/firmware/intel/ipu6ep_fw.bin
-install -p -D -m 0644 lib/firmware/intel/ipu6epadln_fw.bin %{buildroot}/usr/lib/firmware/intel/ipu6epadln_fw.bin
-install -p -D -m 0644 lib/firmware/intel/ipu6epmtl_fw.bin %{buildroot}/usr/lib/firmware/intel/ipu6epmtl_fw.bin
 
 %files
 %license LICENSE
@@ -81,15 +79,6 @@ install -p -D -m 0644 lib/firmware/intel/ipu6epmtl_fw.bin %{buildroot}/usr/lib/f
 %{_libdir}/ipu_tgl/*.so*
 %{_libdir}/ipu_adl/*.so*
 %{_libdir}/ipu_mtl/*.so*
-
-%files firmware
-%license LICENSE
-%dir /usr/lib/firmware
-%dir /usr/lib/firmware/intel
-/usr/lib/firmware/intel/ipu6_fw.bin
-/usr/lib/firmware/intel/ipu6ep_fw.bin
-/usr/lib/firmware/intel/ipu6epadln_fw.bin
-/usr/lib/firmware/intel/ipu6epmtl_fw.bin
 
 %files devel
 %dir %{_includedir}/ipu_tgl
@@ -110,8 +99,20 @@ install -p -D -m 0644 lib/firmware/intel/ipu6epmtl_fw.bin %{buildroot}/usr/lib/f
 
 
 %changelog
-* Fri Mar 08 2024 Kate Hsuan <hpa@redhat.com> - 0.0-9.220231027gitaf5ba0c
+* Mon Jul  1 2024 Hans de Goede <hdegoede@redhat.com> - 0.0-12.20240507git987b09a
+- Temporarily drop Requires: gstreamer1-plugins-icamerasrc to break
+  broken depenency loop caused by ipu6-camera-hal soname change
+
+* Mon Jun 24 2024 Hans de Goede <hdegoede@redhat.com> - 0.0-11.20240507git987b09a
+- Update to commit 987b09ad7e6124ab8623a986f92ecb47061b8fa0
+- Drop ipu6-camera-bins-firmware and switch to requiring the new
+  Fedora linux-firmware intel-vsc-firmware subpackage
+
+* Fri Mar 08 2024 Kate Hsuan <hpa@redhat.com> - 0.0-10.20231027gitaf5ba0c
 - Update to the latest upstream commit
+
+* Sun Feb 04 2024 RPM Fusion Release Engineering <sergiomb@rpmfusion.org> - 0.0-9.20230208git276859f
+- Rebuilt for https://fedoraproject.org/wiki/Fedora_40_Mass_Rebuild
 
 * Tue Aug 08 2023 Kate Hsuan <hpa@redhat.com> - 0.0-8.20230208git276859f
 - Updated to commit 276859fc6de83918a32727d676985ec40f31af2b
