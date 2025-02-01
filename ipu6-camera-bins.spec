@@ -1,13 +1,13 @@
 %global debug_package %{nil}
 
-%global commit 987b09ad7e6124ab8623a986f92ecb47061b8fa0
-%global commitdate 20240507
+%global commit 3c1cdd3e634bb4668a900d75efd4d6292b8c7d1d
+%global commitdate 20241127
 %global shortcommit %(c=%{commit}; echo ${c:0:7})
 
 Name:           ipu6-camera-bins
 Summary:        Binary library for Intel IPU6
 Version:        0.0
-Release:        15.%{commitdate}git%{shortcommit}%{?dist}
+Release:        16.%{commitdate}git%{shortcommit}%{?dist}
 License:        Proprietary
 URL:            https://github.com/intel/ipu6-camera-bins
 
@@ -15,22 +15,18 @@ Source0: https://github.com/intel/%{name}/archive/%{commit}/%{name}-%{shortcommi
 
 BuildRequires:  systemd-rpm-macros
 BuildRequires:  chrpath
-BuildRequires:  patchelf
 
 ExclusiveArch:  x86_64
 
-Requires:       gstreamer1-plugins-icamerasrc
+#Requires:       gstreamer1-plugins-icamerasrc
 Requires:       v4l2-relayd
 Requires:       intel-ipu6-kmod >= 0.0-14
 
 # Require the new Fedora linux-firmware intel-vsc-firmware subpackage and
-# obsolete but do not provide old firmware packages
+# obsolete but do not provide the 2 old firmware packages
 Requires:       intel-vsc-firmware >= 20240513
 Obsoletes:      ipu6-camera-bins-firmware < 0.0-11
-# TODO stop requiring and instead obsolete ivsc-firmware once users are no
-# longer using kernels < 6.10 (and also retire the ivsc-firmware pkg)
-Requires:       ivsc-firmware
-# Obsoletes:    ivsc-firmware < 0.0-8
+Obsoletes:      ivsc-firmware < 0.0-10
 
 # For kmod package
 Provides:       intel-ipu6-kmod-common = %{version}
@@ -51,54 +47,50 @@ This provides the necessary header files for IPU6 development.
 %prep
 
 %setup -q -n %{name}-%{commit}
-for i in ipu_tgl ipu_adl ipu_mtl; do
-  chrpath --delete lib/$i/*.so
-done
+chrpath --delete lib/*.so.0
+chmod +x lib/*.so.0
+# Firmware is part of linux-firmware now
+rm -r lib/firmware
 
 %build
 # Nothing to build
 
 %install
 mkdir -p %{buildroot}%{_includedir}
-for i in ipu_tgl ipu_adl ipu_mtl; do
-  mkdir -p %{buildroot}%{_libdir}/$i
-  cp -pr include/$i %{buildroot}%{_includedir}
-  cp -pr lib/$i/lib* lib/$i/pkgconfig %{buildroot}%{_libdir}/$i
-  patchelf --set-rpath %{_libdir}/$i %{buildroot}%{_libdir}/$i/*.so
-  sed -i \
-    -e "s|libdir=\${prefix}/lib/$i|libdir=%{_libdir}/$i|g" \
-    %{buildroot}%{_libdir}/$i/pkgconfig/*.pc
-done
+mkdir -p %{buildroot}%{_libdir}
+cp -pr include/* %{buildroot}%{_includedir}
+cp -pr lib/* %{buildroot}%{_libdir}
 
+pushd %{buildroot}%{_libdir}
+  # The .so.0 files have no soname, manually create symlinks for linking
+  for i in *.so.0; do
+    ln -s $i `echo $i | sed -e "s|\.so\.0|\.so|"`
+  done
+  # Fix libdir in .pc files
+  for i in pkgconfig/*.pc; do
+    sed -i -e "s|libdir=\${prefix}/lib|libdir=%{_libdir}|g" "$i"
+  done
+popd
 
 %files
 %license LICENSE
-%dir %{_libdir}/ipu_tgl
-%dir %{_libdir}/ipu_adl
-%dir %{_libdir}/ipu_mtl
-%{_libdir}/ipu_tgl/*.so*
-%{_libdir}/ipu_adl/*.so*
-%{_libdir}/ipu_mtl/*.so*
+%{_libdir}/*.so.0
 
 %files devel
-%dir %{_includedir}/ipu_tgl
-%dir %{_includedir}/ipu_adl
-%dir %{_includedir}/ipu_mtl
-%dir %{_libdir}/ipu_tgl/pkgconfig
-%dir %{_libdir}/ipu_adl/pkgconfig
-%dir %{_libdir}/ipu_mtl/pkgconfig
-%{_includedir}/ipu_tgl/*
-%{_includedir}/ipu_adl/*
-%{_includedir}/ipu_mtl/*
-%{_libdir}/ipu_tgl/pkgconfig/*
-%{_libdir}/ipu_adl/pkgconfig/*
-%{_libdir}/ipu_mtl/pkgconfig/*
-%{_libdir}/ipu_tgl/*.a
-%{_libdir}/ipu_adl/*.a
-%{_libdir}/ipu_mtl/*.a
+%{_includedir}/ipu6
+%{_includedir}/ipu6ep
+%{_includedir}/ipu6epmtl
+%{_libdir}/*.a
+%{_libdir}/*.so
+%{_libdir}/pkgconfig/*.pc
 
 
 %changelog
+* Fri Jan 31 2025 Hans de Goede <hdegoede@redhat.com> - 0.0-16.20241127git3c1cdd3
+- Update to latest upstream commit 3c1cdd3e634bb4668a900d75efd4d6292b8c7d1d
+- Temporarily drop Requires: gstreamer1-plugins-icamerasrc to break broken
+  depenency loop caused by provided libraries soname changes
+
 * Wed Jan 29 2025 RPM Fusion Release Engineering <sergiomb@rpmfusion.org> - 0.0-15.20240507git987b09a
 - Rebuilt for https://fedoraproject.org/wiki/Fedora_42_Mass_Rebuild
 
