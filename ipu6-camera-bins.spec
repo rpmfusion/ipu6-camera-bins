@@ -1,13 +1,13 @@
 %global debug_package %{nil}
 
-%global commit 3c1cdd3e634bb4668a900d75efd4d6292b8c7d1d
-%global commitdate 20241127
+%global commit 30e87664829782811a765b0ca9eea3a878a7ff29
+%global commitdate 20250627
 %global shortcommit %(c=%{commit}; echo ${c:0:7})
 
 Name:           ipu6-camera-bins
 Summary:        Binary library for Intel IPU6
 Version:        0.0
-Release:        18.%{commitdate}git%{shortcommit}%{?dist}
+Release:        19.%{commitdate}git%{shortcommit}%{?dist}
 License:        Proprietary
 URL:            https://github.com/intel/ipu6-camera-bins
 
@@ -86,6 +86,9 @@ popd
 
 
 %changelog
+* Wed Sep 10 2025 Kate Hsuan <hpa@redhat.com> - 0.0-19.20250627git30e8766
+- Update ipu6-camera-bins to the upstream commit 30e8766.
+
 * Sun Jul 27 2025 RPM Fusion Release Engineering <sergiomb@rpmfusion.org> - 0.0-18.20241127git3c1cdd3
 - Rebuilt for https://fedoraproject.org/wiki/Fedora_43_Mass_Rebuild
 
